@@ -12,8 +12,8 @@
 #include "url.h"
 #include "util.h"
 #include "socket.h"
-#include <cmath>
 #include <set>
+#include <sstream>
 
 namespace http {
     // Non-Member Fields

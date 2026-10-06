@@ -6,6 +6,7 @@
 //
 
 #include "http.h"
+#include "json.h"
 #include "url.h"
 
 using namespace std;
@@ -21,17 +22,28 @@ int main(int argc, const char* argv[]) {
         logger.some("url: " + request.url() + ", body: " + (request.body().empty() ? "null" : request.body()));
 
         http::header::map headers = {
-            { "Content-Type", "text/plain" }
+            { "Content-Type", "application/json" }
         };
 
         if (request.method() == "GET" && request.url() == "/api/ping") {
             headers["Connection"] = string("keep-alive");
             headers["Keep-Alive"] = string("timeout=" + to_string(http::keep_alive_timeout) + ";max=" + to_string(http::keep_alive_max));
 
-            return http::response("Hello, world!", headers);
+            auto pong = make_unique<json::object>((vector<json::object*>) {
+                new json::object("pong", escape("Hello, world!"))
+            });
+
+            return http::response(pong->str(), headers);
         }
 
-        return http::response(http::NOT_FOUND, "Cannot " + request.method() + " " + request.url(), headers);
+        auto error = make_unique<json::object>((vector<json::object*>) {
+            new json::object(
+                "message",
+                escape("Cannot " + request.method() + " " + request.url())
+            )
+        });
+
+        return http::response(http::NOT_FOUND, error->str(), headers);
     });
 
     server.listen(port, []{ cout << "Server listening on port " + to_string(port) + "...\n"; });
